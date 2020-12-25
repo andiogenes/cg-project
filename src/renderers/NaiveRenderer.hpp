@@ -19,9 +19,10 @@ public:
                 auto column = std::vector<uint8_t>(length);
 
                 auto c = GetPixelColor((Color *) perlin.data + z * width + x, UNCOMPRESSED_R8G8B8);
-                float l = std::round(((float)(c.r)/255.f) * 10);
+                float l = std::floor(((float) (c.r) / 255.f) * 10);
 
-                std::fill(column.begin() + std::floor(l), column.end(), 1);
+                column[length - 1 - (int) l] = l > (float) length / 4 ? 1 : 3;
+                std::fill(column.begin() + length - l, column.end(), 2);
                 row[z] = column;
             }
 
@@ -30,11 +31,18 @@ public:
 
         UnloadImage(perlin);
 
-        cube.materials[0].maps[MAP_DIFFUSE].texture = atlas["grass"];
+        const std::vector<std::string> textureAliases = {"grass", "dirt", "sand"};
+        for (const auto &it : textureAliases) {
+            Model cube = LoadModelFromMesh(GenMeshCube(1.f, 1.f, 1.f));
+            cube.materials[0].maps[MAP_DIFFUSE].texture = atlas[it];
+            cubes.push_back(cube);
+        }
     }
 
     ~NaiveRenderer() override {
-        UnloadModel(cube);
+        for (auto const &cube : cubes) {
+            UnloadModel(cube);
+        }
     }
 
     void render2D() override {}
@@ -52,7 +60,7 @@ public:
                                 (float) length / 2 - (float) k,
                                 (float) height / 2 - (float) j
                         };
-                        DrawModel(cube, pos, 1.f, WHITE);
+                        DrawModel(cubes[*yIt - 1], pos, 1.f, WHITE);
                         DrawCubeWires(pos, 1.f, 1.f, 1.f, BLACK);
                     }
                 }
@@ -63,5 +71,5 @@ public:
 private:
     const int width, height, length;
     std::vector<std::vector<std::vector<uint8_t>>> model;
-    Model cube = LoadModelFromMesh(GenMeshCube(1.f, 1.f, 1.f));
+    std::vector<Model> cubes;
 };

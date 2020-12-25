@@ -10,6 +10,8 @@ public:
 
 protected:
     TextureAtlas atlas = TextureAtlas("resources/atlas.png", {
-            {"grass", {0, 0, 64, 64}}
+            {"grass", {0, 0, 64, 64}},
+            {"dirt", {64, 0, 64, 64}},
+            {"sand", {128, 0, 64, 64}}
     });
 };
