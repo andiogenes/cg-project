@@ -30,7 +30,7 @@ public:
                 ClearBackground(SKYBLUE);
 
                 BeginMode3D(camera);
-                    renderer.render3D();
+                    renderer.render3D(camera);
                 EndMode3D();
 
                 renderer.render2D();

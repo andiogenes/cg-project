@@ -47,7 +47,7 @@ public:
 
     void render2D() override {}
 
-    void render3D() override {
+    void render3D(const Camera3D &camera) override {
         for (auto xIt = model.begin(); xIt != model.end(); ++xIt) {
             int i = std::distance(model.begin(), xIt);
             for (auto zIt = xIt->begin(); zIt != xIt->end(); ++zIt) {

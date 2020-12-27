@@ -1,5 +1,5 @@
 #include "Application.hpp"
-#include "renderers/NaiveRenderer.hpp"
+#include "renderers/ChunkRenderer.hpp"
 
 int main()
 {
@@ -7,6 +7,6 @@ int main()
     const auto screenHeight = 768;
 
     auto app = Application(screenWidth, screenHeight, "minesruft");
-    auto renderer = NaiveRenderer(32, 32, 8);
+    auto renderer = ChunkRenderer(32, 32, 8);
     app.run(renderer);
 }
