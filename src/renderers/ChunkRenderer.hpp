@@ -3,6 +3,7 @@
 #include "Renderer.hpp"
 #include "../chunks/Chunk.hpp"
 #include "raylib.h"
+#include "raymath.h"
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -11,7 +12,7 @@ const std::array<std::string, 3> textureAliases = {"grass", "dirt", "sand"};
 
 class ChunkRenderer : public Renderer {
 public:
-    ChunkRenderer(int width, int height, int length) : width(width), height(height), length(length) {
+    ChunkRenderer(int width, int height, int length): width(width), height(height) {
         auto xChunks = std::max(1, width / CHUNK_SIZE);
         auto yChunks = std::max(1, length / CHUNK_SIZE);
         auto zChunks = std::max(1, height / CHUNK_SIZE);
@@ -25,7 +26,7 @@ public:
                 for (int k = 0; k < yChunks; k++) {
                     auto current = (zChunks * k + j) * xChunks + i;
 
-                    chunks[current].offset = {i, k, j};
+                    chunks[current].offset = {(float)(i * CHUNK_SIZE), (float)(k * CHUNK_SIZE), (float)(j * CHUNK_SIZE)};
 
                     if (k - 1 >= 0) chunks[current].neighbours[NEIGHBOUR_UP] = &chunks[(zChunks * (k - 1) + j) * xChunks + i];
                     if (k + 1 < yChunks) chunks[current].neighbours[NEIGHBOUR_DOWN] = &chunks[(zChunks * (k + 1) + j) * xChunks + i];
@@ -35,14 +36,6 @@ public:
                     if (j + 1 < zChunks) chunks[current].neighbours[NEIGHBOUR_BACKWARD] = &chunks[(zChunks * k + (j + 1)) * xChunks + i];
                 }
             }
-        }
-
-        for (auto const &chunk: chunks) {
-            std::cout << &chunk << ": ";
-            for (auto const &n : chunk.neighbours) {
-                std::cout << n << " ";
-            }
-            std::cout << std::endl;
         }
 
         auto perlin = GenImagePerlinNoise(width, height, 10, 10, 1.f);
@@ -68,7 +61,7 @@ public:
         UnloadImage(perlin);
 
         for (auto &chunk : chunks) {
-            chunk.calculateBorder();
+            chunk.calculateBorder(width, height, length);
         }
 
         plane = LoadModelFromMesh(GenMeshPlane(1.f, 1.f, 1, 1));
@@ -81,13 +74,30 @@ public:
     void render2D() override {}
 
     void render3D(const Camera3D &camera) override {
+        const Vector2 direction = {camera.target.x - camera.position.x, camera.target.z - camera.position.z};
+
         for (auto const &chunk : chunks) {
-            for (const auto & it : chunk.border) {
-                const Vector3 pos = {
-                        (float) width / 2 - it.pos.x - (float)chunk.offset.x * CHUNK_SIZE,
-                        (float) length / 2 - it.pos.y - (float)chunk.offset.y * CHUNK_SIZE,
-                        (float) height / 2 - it.pos.z - (float)chunk.offset.z * CHUNK_SIZE
-                };
+            const std::array<Vector2, 4> aabb = {
+                    (Vector2) {(float) width / 2 - chunk.offset.x, (float) height / 2 - chunk.offset.z},
+                    {(float) width / 2 - CHUNK_SIZE - chunk.offset.x, (float) height / 2 - chunk.offset.z},
+                    {(float) width / 2 - chunk.offset.x, (float) height / 2 - CHUNK_SIZE - chunk.offset.z},
+                    {(float) width / 2 - CHUNK_SIZE - chunk.offset.x, (float) height / 2 - CHUNK_SIZE - chunk.offset.z}
+            };
+
+            bool visible = false;
+            for (auto const &p : aabb) {
+                const Vector2 hypotenuse = {p.x - camera.target.x, p.y - camera.target.z};
+                const auto angle = abs(acos(Vector2DotProduct(hypotenuse, direction) / (abs(Vector2Length(direction)) * abs(Vector2Length(hypotenuse)))));
+                if (angle < FOV_Y) {
+                    visible = true;
+                    break;
+                }
+            }
+
+            if (!visible) continue;
+
+            for (const auto &it : chunk.border) {
+                const auto &pos = it.pos;
                 plane.materials[0].maps[MAP_DIFFUSE].texture = atlas[textureAliases[it.tpe]];
                 if ((it.faceMask >> 0) & 0x1)
                     DrawModelEx(plane, {pos.x + 0.5f, pos.y, pos.z}, {0.f, 0.f, -1.f}, 90.f, {1.f, 1.f, 1.f}, LIGHTGRAY);
@@ -106,9 +116,9 @@ public:
     }
 
 private:
-    const int width, height, length;
-
+    const int width, height;
     static const int CHUNK_SIZE = 16;
+    static constexpr float FOV_Y = PI / 3.f;
     std::vector<Chunk<CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE>> chunks;
 
     Model plane = {};

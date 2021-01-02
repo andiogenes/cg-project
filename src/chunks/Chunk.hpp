@@ -13,7 +13,7 @@
 
 template<size_t width, size_t height, size_t length>
 struct Chunk {
-    void calculateBorder() {
+    void calculateBorder(int worldWidth, int worldHeight, int worldLength) {
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < height; z++) {
                 for (int y = 0; y < length; y++) {
@@ -74,18 +74,19 @@ struct Chunk {
                     }
 
                     if (neighbours_count < 6) {
-                        border.push_back({{(float) x, (float) y, (float) z}, (uint8_t)(data[x][z][y] - 1), faceMask});
+                        const Vector3 pos = {
+                                (float) worldWidth / 2 - x - offset.x,
+                                (float) worldLength / 2 - y - offset.y,
+                                (float) worldHeight / 2 - z - offset.z
+                        };
+                        border.push_back({pos, (uint8_t)(data[x][z][y] - 1), faceMask});
                     }
                 }
             }
         }
     }
 
-    struct {
-        int x;
-        int y;
-        int z;
-    } offset;
+    Vector3 offset;
 
     struct BorderInfo {
         Vector3 pos;
