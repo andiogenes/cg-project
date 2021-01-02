@@ -62,13 +62,8 @@ public:
 
         for (auto &chunk : chunks) {
             chunk.calculateBorder(width, height, length);
+            chunk.genMeshes();
         }
-
-        plane = LoadModelFromMesh(GenMeshPlane(1.f, 1.f, 1, 1));
-    }
-
-    ~ChunkRenderer() override {
-        UnloadModel(plane);
     }
 
     void render2D() override {}
@@ -94,23 +89,11 @@ public:
                 }
             }
 
-            if (!visible) continue;
+            // if (!visible) continue;
 
-            for (const auto &it : chunk.border) {
-                const auto &pos = it.pos;
-                plane.materials[0].maps[MAP_DIFFUSE].texture = atlas[textureAliases[it.tpe]];
-                if ((it.faceMask >> 0) & 0x1)
-                    DrawModelEx(plane, {pos.x + 0.5f, pos.y, pos.z}, {0.f, 0.f, -1.f}, 90.f, {1.f, 1.f, 1.f}, LIGHTGRAY);
-                if ((it.faceMask >> 1) & 0x1)
-                   DrawModelEx(plane, {pos.x - 0.5f, pos.y, pos.z}, {0.f, 0.f, 1.f}, 90.f, {1.f, 1.f, 1.f}, GRAY);
-                if ((it.faceMask >> 2) & 0x1)
-                    DrawModelEx(plane, {pos.x, pos.y, pos.z + 0.5f}, {1.f, 0.f, 0.f}, 90.f, {1.f, 1.f, 1.f}, LIGHTGRAY);
-                if ((it.faceMask >> 3) & 0x1)
-                    DrawModelEx(plane, {pos.x, pos.y, pos.z - 0.5f}, {-1.f, 0.f, 0.f}, 90.f, {1.f, 1.f, 1.f}, GRAY);
-                if ((it.faceMask >> 4) & 0x1)
-                    DrawModel(plane, {pos.x, pos.y + 0.5f, pos.z}, 1.f, WHITE);
-                if ((it.faceMask >> 5) & 0x1)
-                    DrawModelEx(plane, {pos.x, pos.y - 0.5f, pos.z}, {1.f, 0.f, 0.f}, 180.f, {1.f, 1.f, 1.f}, DARKGRAY);
+            for (int i = 0; i < 3; i++) {
+                chunk.models[i].materials[0].maps[MAP_DIFFUSE].texture = atlas[textureAliases[i]];
+                DrawModel(chunk.models[i], {0.f, 0.f, 0.f}, 1.f, WHITE);
             }
         }
     }
@@ -120,6 +103,4 @@ private:
     static const int CHUNK_SIZE = 16;
     static constexpr float FOV_Y = PI / 3.f;
     std::vector<Chunk<CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE>> chunks;
-
-    Model plane = {};
 };
