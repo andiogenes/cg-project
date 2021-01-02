@@ -1,3 +1,7 @@
+/*
+ * Anton Zavyalov, Altai STU, 2020.
+ */
+
 #pragma once
 
 #include "raylib.h"
@@ -11,16 +15,35 @@
 #define NEIGHBOUR_FORWARD 4
 #define NEIGHBOUR_BACKWARD 5
 
+/**
+ * Блок пространственной воксельной информации
+ * @tparam width Ширина блока
+ * @tparam height Длина блока
+ * @tparam length Высота блока
+ */
 template<size_t width, size_t height, size_t length>
 struct Chunk {
+    /**
+     * Вычисляет трехмерную границу блока. Информация о границе записывается в Chunk.border.
+     *
+     * @param worldWidth Ширина полного воксельного объекта
+     * @param worldHeight Длина полного воксельного объекта
+     * @param worldLength Высота полного воксельного объекта
+     */
     void calculateBorder(int worldWidth, int worldHeight, int worldLength) {
         for (int x = 0; x < width; x++) {
             for (int z = 0; z < height; z++) {
                 for (int y = 0; y < length; y++) {
+                    // Пропуск пустых ячеек
                     if (data[x][z][y] == 0) continue;
 
                     int neighbours_count = 0;
                     uint8_t faceMask = 0;
+
+                    // Принцип определения границы:
+                    // 1. Определить, ячейка внутренняя или внешняя
+                    // 2. Если внешняя, уточнить видимые грани ячейки
+                    // 3. Зафиксировать информацию о граничной ячейке
 
                     // TODO: refactor me!
 
@@ -86,15 +109,43 @@ struct Chunk {
         }
     }
 
+    /**
+     * Смещение блока относительно начала координат.
+     */
     Vector3 offset;
 
+    /**
+     * Информация о граничной ячейке.
+     */
     struct BorderInfo {
+        /**
+         * Позиция.
+         */
         Vector3 pos;
+
+        /**
+         * Тип (номер текстур).
+         */
         uint8_t tpe;
+
+        /**
+         * Битовая маска видимых вершин.
+         */
         uint8_t faceMask;
     };
 
+    /**
+     * Соседние блоки.
+     */
     std::array<Chunk*, 6> neighbours = { nullptr };
+
+    /**
+     * Трехмерная граница блока.
+     */
     std::vector<BorderInfo> border;
+
+    /**
+     * Данные в блоке.
+     */
     std::array<std::array<std::array<uint8_t, length>, height>, width> data = { 0 };
 };

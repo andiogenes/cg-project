@@ -1,3 +1,7 @@
+/*
+ * Anton Zavyalov, Altai STU, 2020.
+ */
+
 #pragma once
 
 #include "Renderer.hpp"
@@ -5,13 +9,24 @@
 #include <vector>
 #include <cmath>
 
+/**
+ * "Наивный" отрисовщик. Хранит и рисует все предоставляемые воксели.
+ */
 class NaiveRenderer : public Renderer {
 public:
+    /**
+     * @param width Ширина объекта
+     * @param height Длина объекта
+     * @param length Высота объекта
+     */
     NaiveRenderer(int width, int height, int length) : width(width), height(height), length(length) {
+        // Генерация карты высот из шума Перлина
         auto perlin = GenImagePerlinNoise(width, height, 10, 10, 1.f);
 
+        // Инициализация воксельной модели
         model = std::vector<std::vector<std::vector<uint8_t>>>(width);
 
+        // Заполнение воксельной модели
         for (int x = 0; x < width; x++) {
             auto row = std::vector<std::vector<uint8_t>>(height);
 
@@ -31,6 +46,7 @@ public:
 
         UnloadImage(perlin);
 
+        // Загрузка кубов, представляющих воксели
         const std::vector<std::string> textureAliases = {"grass", "dirt", "sand"};
         for (const auto &it : textureAliases) {
             Model cube = LoadModelFromMesh(GenMeshCube(1.f, 1.f, 1.f));
@@ -48,6 +64,7 @@ public:
     void render2D() override {}
 
     void render3D(const Camera3D &camera) override {
+        // Наивно обойти весь 3D-массив и отрисовать все существующие воксели
         for (auto xIt = model.begin(); xIt != model.end(); ++xIt) {
             int i = std::distance(model.begin(), xIt);
             for (auto zIt = xIt->begin(); zIt != xIt->end(); ++zIt) {

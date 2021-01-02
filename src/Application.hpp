@@ -1,10 +1,23 @@
+/*
+ * Anton Zavyalov, Altai STU, 2020.
+ */
+
 #pragma once
 
 #include "raylib.h"
 #include "renderers/Renderer.hpp"
 
+/**
+ * Каркас приложения с задаваемым отрисовщиком.
+ */
 class Application {
 public:
+    /**
+     * @param width Ширина окна
+     * @param height Длина окна
+     * @param title Заголовок окна
+     * @param fullscreen Полноэкранный режим
+     */
     Application(int width, int height, const char* title, bool fullscreen = false) {
         ConfigFlag configFlags = FLAG_MSAA_4X_HINT;
         if (fullscreen) {
@@ -21,6 +34,10 @@ public:
         CloseWindow();
     }
 
+    /**
+     * Запускает приложение с установленной стратегией отрисовки.
+     * @param renderer Отрисовщик, согласно которому отображается графика
+     */
     void run(Renderer &renderer) {
         while (!WindowShouldClose()) {
             UpdateCamera(&camera);
